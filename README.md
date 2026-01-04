@@ -8,7 +8,7 @@ An intelligent IoT-enabled medicine reminder and dispensing system designed to i
 
 - 🌐 **Web Dashboard:** [LIVE](https://smart-medicine-reminder-frontend.vercel.app/)  
 - 🔧 **Backend API:** https://smart-medicine-reminder-backend.onrender.com
-- 🎥 **System Demo Video:** (Add YouTube / Drive link here)  
+- 🎥 **System Demo Video:** (Uploading soon...)  
 
 ---
 
