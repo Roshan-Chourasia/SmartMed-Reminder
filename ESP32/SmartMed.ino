@@ -7,8 +7,8 @@
 #include <Adafruit_PWMServoDriver.h>
 
 // ---------------- WIFI ----------------
-#define WIFI_SSID     "Roshan"
-#define WIFI_PASSWORD "12345678"
+#define WIFI_SSID     "YourWiFi"
+#define WIFI_PASSWORD "YourPassword"
 #define SERVER_URL    "https://smart-medicine-reminder-backend.onrender.com"  
 #define DEVICE_ID     "DEVICE_001"
 
