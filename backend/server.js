@@ -49,6 +49,65 @@ mongoose
 app.use("/api/dose-time", require("./routes/doseTime"));
 app.use("/api/dose-log", require("./routes/doseLog"));
 
+// Auth routes (will be implemented next); keep server running even if file is absent.
+let authRoutes;
+try {
+  authRoutes = require("./routes/auth");
+} catch (err) {
+  console.warn("Auth routes not available yet:", err.message);
+  authRoutes = express.Router();
+}
+app.use("/api/auth", authRoutes);
+
+// Protect patient routes only (device routes remain open). Skip if route file missing.
+try {
+  const patientRoutes = require("./routes/patient");
+  const authMiddleware = require("./middleware/auth");
+  app.use("/api/patient", authMiddleware, patientRoutes);
+} catch (err) {
+  console.warn("Patient routes not available yet:", err.message);
+}
+
+// Public heartbeat endpoint (no auth required - ESP32 devices call this)
+try {
+  const Patient = require("./models/Patient");
+  app.post("/api/device/heartbeat", async (req, res) => {
+    try {
+      const { deviceId } = req.body;
+      
+      if (!deviceId) {
+        return res.status(400).json({ message: 'deviceId is required' });
+      }
+      
+      // Update lastSeen timestamp for the patient with this deviceId
+      const patient = await Patient.findOneAndUpdate(
+        { deviceId: deviceId, deviceActive: true },
+        { deviceLastSeen: new Date() },
+        { new: true }
+      );
+      
+      if (!patient) {
+        return res.status(404).json({ message: 'Device not found or not active' });
+      }
+      
+      res.json({ success: true, message: 'Heartbeat received' });
+    } catch (err) {
+      res.status(500).json({ message: 'Failed to process heartbeat', error: err.message });
+    }
+  });
+} catch (err) {
+  console.warn("Heartbeat endpoint not available:", err.message);
+}
+
+// Device management routes (protected - web app only)
+try {
+  const deviceRoutes = require("./routes/device");
+  const authMiddleware = require("./middleware/auth");
+  app.use("/api/device", authMiddleware, deviceRoutes);
+} catch (err) {
+  console.warn("Device routes not available yet:", err.message);
+}
+
 // Health check endpoint for Render
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });

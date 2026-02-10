@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const DoseLog = require("../models/DoseLog");
+const Patient = require("../models/Patient");
 
 const MEALS = ["morning", "afternoon", "night"];
 const TIMINGS = ["before", "after"];
@@ -50,6 +51,19 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ success: false, message: validated.message });
     }
 
+    // Check if deviceId is linked to an active patient
+    const patient = await Patient.findOne({ 
+      deviceId: validated.data.deviceId, 
+      deviceActive: true 
+    });
+    
+    if (!patient) {
+      return res.status(403).json({
+        success: false,
+        message: "Device not linked to an active patient"
+      });
+    }
+
     const log = new DoseLog(validated.data);
 
     await log.save();
@@ -72,6 +86,19 @@ router.get("/", async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "deviceId is required"
+      });
+    }
+
+    // Check if deviceId is linked to an active patient
+    const patient = await Patient.findOne({ 
+      deviceId: deviceId, 
+      deviceActive: true 
+    });
+    
+    if (!patient) {
+      return res.status(403).json({
+        success: false,
+        message: "Device not linked to an active patient"
       });
     }
 

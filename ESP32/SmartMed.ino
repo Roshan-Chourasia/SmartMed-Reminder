@@ -39,6 +39,7 @@ DoseSlot slots[6];
 
 // ---------------- TIMERS ----------------
 unsigned long lastDoseFetch = 0;
+unsigned long lastHeartbeat = 0;
 unsigned long messageStartTime = 0;
 bool showingMessage = false;
 
@@ -171,6 +172,28 @@ void logDose(String meal, String timing, String schedTime, String status) {
   http.end();
 }
 
+// ---------------- HEARTBEAT ----------------
+void sendHeartbeat() {
+  HTTPClient http;
+  http.begin(String(SERVER_URL) + "/api/device/heartbeat");
+  http.addHeader("Content-Type", "application/json");
+
+  StaticJsonDocument<128> doc;
+  doc["deviceId"] = DEVICE_ID;
+
+  String payload;
+  serializeJson(doc, payload);
+  int httpCode = http.POST(payload);
+  http.end();
+  
+  if (httpCode == 200) {
+    Serial.println("Heartbeat sent successfully");
+  } else {
+    Serial.print("Heartbeat failed: ");
+    Serial.println(httpCode);
+  }
+}
+
 // ---------------- FETCH DOSE TIMES ----------------
 void fetchDoseTimes() {
   HTTPClient http;
@@ -232,7 +255,9 @@ void setup() {
 
   connectWiFi();
   fetchDoseTimes();
+  sendHeartbeat(); // Send initial heartbeat
   lastDoseFetch = millis();
+  lastHeartbeat = millis();
 }
 
 // ---------------- LOOP ----------------
@@ -242,6 +267,12 @@ void loop() {
   if (millis() - lastDoseFetch > 300000) {
     fetchDoseTimes();
     lastDoseFetch = millis();
+  }
+
+  // Send heartbeat every 45 seconds (between 30-60 seconds as requested)
+  if (millis() - lastHeartbeat > 45000) {
+    sendHeartbeat();
+    lastHeartbeat = millis();
   }
 
   static bool wasShowingMessage = false;
